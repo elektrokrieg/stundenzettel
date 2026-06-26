@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1a3a5c">
+<title>Stundenzettel – Elektro Krieg</title>
+<style>
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface2: #eef1f6;
+  --border: #d0d7e3;
+  --primary: #1a3a5c;
+  --primary-light: #2557a7;
+  --accent: #e8760a;
+  --accent-light: #fef3e8;
+  --text: #1a1f2e;
+  --text2: #5a6478;
+  --text3: #8a94a8;
+  --success: #2d7a3a;
+  --success-bg: #eaf5ec;
+  --warning: #b85c00;
+  --warning-bg: #fff3e6;
+  --danger: #c0392b;
+  --danger-bg: #fdf0ef;
+  --urlaub: #7b5ea7;
+  --urlaub-bg: #f3eeff;
+  --feiertag: #c0392b;
+  --feiertag-bg: #fdf0ef;
+  --krank: #d4ac0d;
+  --krank-bg: #fffbe6;
+  --elternzeit: #0e7490;
+  --elternzeit-bg: #e0f7fa;
+  --bereit: #2d7a3a;
+  --bereit-bg: #eaf5ec;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --radius: 8px;
+  --header-h: 56px;
+  --tab-h: 52px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* ── HEADER ── */
+#header {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+  background: var(--primary); color: #fff; display: flex; align-items: center;
+  padding: 0 12px; gap: 8px; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+#header h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.2px; flex: 1; }
+#header .sub { font-size: 11px; opacity: 0.7; }
+#btn-save {
+  background: var(--accent); color: #fff; border: none; border-radius: 6px;
+  padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: none;
+}
+#btn-save:active { opacity: 0.8; }
+#update-banner {
+  display: none; background: var(--accent); color: #fff; text-align: center;
+  padding: 8px; font-size: 12px; cursor: pointer; position: fixed; top: var(--header-h);
+  left: 0; right: 0; z-index: 99;
+}
+
+/* ── TABS ── */
+#tabs {
+  position: fixed; bottom: 0; left: 0; right: 0; height: var(--tab-h);
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; color: var(--text3); cursor: pointer; user-select: none; transition: color 0.15s;
+  font-size: 10px; font-weight: 500;
+}
+.tab.active { color: var(--primary-light); }
+.tab svg { width: 22px; height: 22px; }
+
+/* ── MAIN CONTENT ── */
+#main {
+  padding-top: calc(var(--header-h) + 8px);
+  padding-bottom: calc(var(--tab-h) + 8px);
+  min-height: 100%;
+}
+.page { display: none; padding: 8px 10px; }
+.page.active { display: block; }
+
+/* ── MONTH SELECTOR ── */
+#month-nav {
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px 4px;
+  position: sticky; top: var(--header-h); background: var(--bg); z-index: 50;
+}
+#month-nav button {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  width: 34px; height: 34px; font-size: 16px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--primary);
+}
+#month-title {
+  flex: 1; text-align: center; font-size: 15px; font-weight: 700;
+  color: var(--primary); cursor: pointer;
+}
+#monat-pdf-btn {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; font-size: 12px; color: var(--primary-light); cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── SUMMARY CARD ── */
+.summary-card {
+  background: var(--primary); color: #fff; border-radius: 10px;
+  padding: 12px 14px; margin: 8px 10px 6px; display: grid;
+  grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.summary-card .item { text-align: center; }
+.summary-card .val { font-size: 18px; font-weight: 700; }
+.summary-card .lbl { font-size: 10px; opacity: 0.75; margin-top: 2px; }
+.summary-card .item.highlight .val { color: #fbbf24; }
+
+/* ── DAY ROWS ── */
+#day-list { padding: 0 10px; }
+
+.day-row {
+  background: var(--surface); border-radius: 8px; margin-bottom: 4px;
+  border: 1px solid var(--border); overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.day-row.weekend { background: var(--surface2); }
+.day-row.today { border-color: var(--primary-light); box-shadow: 0 0 0 2px rgba(37,87,167,0.15); }
+
+.day-header {
+  display: grid; grid-template-columns: 36px 1fr auto auto;
+  align-items: center; gap: 4px; padding: 7px 10px;
+  cursor: pointer; user-select: none;
+}
+.day-tag {
+  font-size: 11px; font-weight: 700; color: var(--text2);
+  text-align: center; line-height: 1;
+}
+.day-datum { font-size: 11px; color: var(--text3); }
+.day-baustelle { font-size: 12px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.day-std { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; min-width: 44px; text-align: right; }
+
+.day-std.mehr { color: var(--success); }
+.day-std.minus { color: var(--danger); }
+
+/* status badges */
+.badge {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px; letter-spacing: 0.2px;
+}
+.badge-U { background: var(--urlaub-bg); color: var(--urlaub); }
+.badge-F { background: var(--feiertag-bg); color: var(--feiertag); }
+.badge-K { background: var(--krank-bg); color: var(--krank); }
+.badge-E { background: var(--elternzeit-bg); color: var(--elternzeit); }
+.badge-A { background: var(--success-bg); color: var(--success); }
+.badge-B { background: var(--bereit-bg); color: var(--bereit); }
+
+/* ── EDIT PANEL ── */
+.day-edit {
+  display: none; border-top: 1px solid var(--border);
+  padding: 10px 10px 12px; background: #fafbfd;
+}
+.day-edit.open { display: block; }
+
+.edit-row { display: grid; gap: 6px; margin-bottom: 8px; }
+.edit-row.cols2 { grid-template-columns: 1fr 1fr; }
+.edit-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+.edit-row.cols4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.field-group { display: flex; flex-direction: column; gap: 3px; }
+.field-group label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.3px; }
+.field-group input, .field-group select, .field-group textarea {
+  border: 1px solid var(--border); border-radius: 6px; padding: 7px 8px;
+  font-size: 13px; color: var(--text); background: var(--surface); width: 100%;
+  transition: border-color 0.15s;
+}
+.field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+  outline: none; border-color: var(--primary-light);
+  box-shadow: 0 0 0 2px rgba(37,87,167,0.12);
+}
+.field-group textarea { resize: none; height: 52px; font-family: inherit; }
+
+.calc-display {
+  background: var(--surface2); border-radius: 6px; padding: 8px 10px;
+  font-size: 12px; color: var(--text2); margin-top: 4px;
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; text-align: center;
+}
+.calc-display .cv { font-weight: 700; font-size: 14px; color: var(--primary); }
+.calc-display .cl { font-size: 10px; color: var(--text3); }
+
+/* ── JAHRESPLAN ── */
+#jp-grid {
+  display: grid; grid-template-columns: repeat(2,1fr);
+  gap: 8px; padding: 8px 10px;
+}
+.jp-month { background: var(--surface); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+.jp-month-title {
+  background: var(--primary); color: #fff; font-size: 12px; font-weight: 700;
+  padding: 6px 10px; text-align: center;
+}
+.jp-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; padding: 4px; }
+.jp-day {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 500; border-radius: 3px; cursor: default;
+  position: relative; color: var(--text3);
+}
+.jp-day.wo { opacity: 0.3; }
+.jp-day-inner { text-align: center; line-height: 1.2; }
+.jp-day-num { font-size: 9px; }
+.jp-day-code { font-size: 8px; font-weight: 700; }
+
+.jp-day.jp-U { background: var(--urlaub-bg); color: var(--urlaub); }
+.jp-day.jp-F { background: var(--feiertag-bg); color: var(--feiertag); }
+.jp-day.jp-K { background: var(--krank-bg); color: var(--krank); }
+.jp-day.jp-E { background: var(--elternzeit-bg); color: var(--elternzeit); }
+.jp-day.jp-A { background: var(--success-bg); color: var(--success); }
+.jp-day.jp-B { background: var(--bereit-bg); color: var(--bereit); }
+.jp-day.jp-S { background: #e3f0ff; color: #2557a7; }
+.jp-day.jp-UB { background: var(--urlaub-bg); color: var(--urlaub); }
+.jp-day.jp-FB { background: var(--feiertag-bg); color: var(--feiertag); }
+.jp-day.jp-AB { background: var(--success-bg); color: var(--success); }
+.jp-day.today-jp { outline: 2px solid var(--primary-light); }
+
+/* legend */
+.jp-legend {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 0 10px 10px;
+}
+.jp-legend-item { display: flex; align-items: center; gap: 3px; font-size: 10px; }
+.jp-legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* ── ÜBERSTUNDEN ── */
+#ue-table {
+  margin: 10px; background: var(--surface); border-radius: 8px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.ue-row {
+  display: grid; grid-template-columns: 90px 1fr 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border); padding: 8px 10px;
+  font-size: 12px; align-items: center;
+}
+.ue-row:last-child { border-bottom: none; }
+.ue-row.header { background: var(--surface2); font-weight: 700; font-size: 11px; color: var(--text3); }
+.ue-row.total { background: var(--surface2); font-weight: 700; }
+.ue-row .val { text-align: right; }
+.ue-row .val.pos { color: var(--success); font-weight: 700; }
+.ue-row .val.neg { color: var(--danger); font-weight: 700; }
+.ue-row .cur { background: var(--accent-light); border-radius: 4px; padding: 2px 4px; }
+
+.urlaub-card {
+  margin: 0 10px 10px; background: var(--surface); border-radius: 8px;
+  border: 1px solid var(--border); padding: 12px 14px;
+  display: flex; gap: 16px;
+}
+.urlaub-item { text-align: center; flex: 1; }
+.urlaub-item .val { font-size: 24px; font-weight: 700; color: var(--primary); }
+.urlaub-item .lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.urlaub-item .val.used { color: var(--urlaub); }
+.urlaub-item .val.rest { color: var(--success); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: calc(var(--tab-h) + 12px); left: 50%;
+  transform: translateX(-50%) translateY(20px); background: var(--text);
+  color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 13px;
+  opacity: 0; transition: all 0.25s; pointer-events: none; white-space: nowrap; z-index: 200;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0; background: var(--primary);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; z-index: 999; gap: 12px;
+}
+#loading .logo { font-size: 32px; }
+#loading .name { font-size: 20px; font-weight: 800; letter-spacing: 0.5px; }
+#loading .sub { font-size: 13px; opacity: 0.7; }
+
+/* ── MODAL ── */
+.modal-bg {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 150; align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 12px; padding: 20px;
+  max-width: 340px; width: calc(100% - 32px); box-shadow: var(--shadow);
+}
+.modal h3 { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+.modal .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+.modal .modal-btns button {
+  flex: 1; padding: 10px; border-radius: 6px; font-size: 14px;
+  font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+}
+.modal .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.modal .btn-cancel { background: var(--surface); color: var(--text2); }
+
+/* ── GitHub Setup ── */
+#setup-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 500; align-items: center; justify-content: center;
+}
+#setup-overlay.open { display: flex; }
+.setup-card {
+  background: var(--surface); border-radius: 14px; padding: 24px;
+  max-width: 400px; width: calc(100% - 32px); box-shadow: var(--shadow);
+}
+.setup-card h2 { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+.setup-card p { font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.5; }
+.setup-card .field { margin-bottom: 12px; }
+.setup-card label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 4px; }
+.setup-card input {
+  width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 9px 10px; font-size: 13px; color: var(--text);
+}
+.setup-card input:focus { outline: none; border-color: var(--primary-light); }
+.setup-card .btn-setup {
+  width: 100%; background: var(--primary); color: #fff; border: none;
+  border-radius: 8px; padding: 12px; font-size: 15px; font-weight: 700;
+  cursor: pointer; margin-top: 4px;
+}
+.setup-card .hint { font-size: 11px; color: var(--text3); text-align: center; margin-top: 10px; }
+
+/* ── Sync indicator ── */
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #6ee7b7;
+  display: inline-block; margin-left: 6px;
+}
+.sync-dot.pending { background: var(--accent); }
+.sync-dot.error { background: var(--danger); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+@media (min-width: 600px) {
+  #jp-grid { grid-template-columns: repeat(3,1fr); }
+  .summary-card { grid-template-columns: repeat(5,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="logo">⚡</div>
+  <div class="name">Stundenzettel</div>
+  <div class="sub">Elektro Krieg Meiningen</div>
+</div>
+
+<div id="update-banner" onclick="location.reload()">🔄 Neue Version verfügbar – tippen zum Aktualisieren</div>
+
+<div id="header">
+  <div>
+    <div id="header-name" style="font-size:15px;font-weight:700">Christian Berthold</div>
+    <div class="sub" id="header-sub">Pers.-Nr. 00002</div>
+  </div>
+  <span id="sync-indicator" class="sync-dot" title="Gespeichert"></span>
+  <button id="btn-save" onclick="saveToGitHub()">💾 Speichern</button>
+</div>
+
+<div id="main">
+  <!-- TAB: STUNDEN -->
+  <div id="page-stunden" class="page active">
+    <div id="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <div id="month-title" onclick="showMonthPicker()"></div>
+      <button onclick="changeMonth(1)">›</button>
+      <button id="monat-pdf-btn" onclick="exportPDF()">📄 PDF</button>
+    </div>
+    <div class="summary-card" id="summary-card"></div>
+    <div id="day-list"></div>
+  </div>
+
+  <!-- TAB: JAHRESPLAN -->
+  <div id="page-jahresplan" class="page">
+    <div style="padding:10px 10px 4px;font-size:11px;color:var(--text3);">Jahresplan 2026</div>
+    <div class="jp-legend" id="jp-legend"></div>
+    <div id="jp-grid"></div>
+  </div>
+
+  <!-- TAB: ÜBERSTUNDEN -->
+  <div id="page-ueberstunden" class="page">
+    <div style="padding:10px 10px 4px;">
+      <div style="font-size:16px;font-weight:700;color:var(--primary)">Überstunden-Übersicht</div>
+      <div style="font-size:12px;color:var(--text3)">Jahr 2026</div>
+    </div>
+    <div class="urlaub-card" id="urlaub-card"></div>
+    <div id="ue-table"></div>
+  </div>
+</div>
+
+<div id="tabs">
+  <div class="tab active" onclick="showTab('stunden',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Stunden
+  </div>
+  <div class="tab" onclick="showTab('jahresplan',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    Jahresplan
+  </div>
+  <div class="tab" onclick="showTab('ueberstunden',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Überstunden
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Setup Overlay -->
+<div id="setup-overlay">
+  <div class="setup-card">
+    <h2>GitHub-Verbindung</h2>
+    <p>Die Daten werden in einem GitHub-Repository gespeichert, damit du von PC und Tablet aus arbeiten kannst.</p>
+    <div class="field">
+      <label>GitHub Token (fine-grained PAT)</label>
+      <input type="password" id="inp-token" placeholder="github_pat_...">
+    </div>
+    <div class="field">
+      <label>Repository (owner/repo)</label>
+      <input type="text" id="inp-repo" placeholder="elektro-krieg/stundenzettel-data">
+    </div>
+    <button class="btn-setup" onclick="saveSetup()">Verbinden & Daten laden</button>
+    <div class="hint">Token wird nur lokal gespeichert (localStorage). Repo muss existieren.</div>
+    <div id="setup-error" style="color:var(--danger);font-size:12px;margin-top:8px;text-align:center;"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SEED DATA (aus XLSM extrahiert)
+// ═══════════════════════════════════════════════
+const SEED_DATA = {"months": {"Januar": [{"datum": "2026-01-01", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-02", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-03", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-05", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-06", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-13", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-18", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-01-19", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-20", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-21", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-22", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-23", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-24", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-01-31", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "Februar": [{"datum": "2026-02-01", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-03", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-05", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-06", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-09", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-11", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-12", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-13", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-14", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-15", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-16", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-17", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-18", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-19", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-20", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-21", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-22", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-23", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-24", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-25", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-26", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-27", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-02-28", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "März": [{"datum": "2026-03-01", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-02", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-03", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-04", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-05", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-06", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-07", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-08", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-09", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-10", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-18", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-19", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-20", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-21", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-22", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-23", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-24", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-27", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-03-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-03-31", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "April": [{"datum": "2026-04-01", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-03", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-05", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-06", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-14", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-18", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-19", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-20", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-04-21", "baustelle": "Krank", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-22", "baustelle": "Krank", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-23", "baustelle": "Krank", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-24", "baustelle": "Krank", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-04-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "Mai": [{"datum": "2026-05-01", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-03", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-04", "baustelle": "Bibra Schule St\u00f6rung EMA; Schwallungen Schule BMA; Schwallungen Sporthalle BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-05", "baustelle": "R\u00f6mhild AWO Umr\u00fcsten AWUG durch Siemens, Wartung BMA; Schwallungen Schule BMA; Schwallungen Sporthalle BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-06", "baustelle": "Meiningen Dampflokerlebniswelt St\u00f6rung RAS; Floh Schule BMA, EMA; Fambach BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-07", "baustelle": "Meiningen Polizeischule Meldertausch Haus 3, Queinfeld Deko St\u00f6rung Netzteil", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "17:30", "fahrzeit": 0.5, "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-08", "baustelle": "Meiningen BBZ Gartenstra\u00dfe BMA, EMA, ELA, Tausch Notleuchten", "beginn": "07:00", "p1": 20, "p2": "", "ende": "12:40", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-11", "baustelle": "Trusetal AWO BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": 30}, {"datum": "2026-05-12", "baustelle": "Trusetal Schule Lampentausch, Schmalkalden Hoffnung BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": 30}, {"datum": "2026-05-13", "baustelle": "K\u00fchndorf Kita", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-14", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-15", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-18", "baustelle": "Meiningen Villa Strupp St\u00f6rung BMA; Friedrichroda AWO BMA; Bad Tabarz AWO BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": 64}, {"datum": "2026-05-19", "baustelle": "Gr\u00e4fenau Angst\u00e4dt St\u00f6rung Schwesternruf; Ilmenau Birkenhof BMA, St\u00f6rung Notlicht", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "15:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": 52}, {"datum": "2026-05-20", "baustelle": "K\u00fchndorf Kita. Wernshausen Sporthalle Meldertausch, Tausch Notleuchten", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-05-21", "baustelle": "Wernshausen Sporthalle Meldertausch, Wartung BMA, EMA; Schmalkalden Gymnasium BMA, EMA, Notlicht", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": 27}, {"datum": "2026-05-22", "baustelle": "Firma", "beginn": "07:00", "p1": 20, "p2": "", "ende": "12:40", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-05-23", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-05-24", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-05-25", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-05-26", "baustelle": "Geisa Schloss BMA, RWA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": 47}, {"datum": "2026-05-27", "baustelle": "Schmalkalden St\u00f6rung BMA, K\u00fchndorf Kita BMA, MGN Palais BMA", "beginn": "06:30", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-05-28", "baustelle": "MGN Anne-Frank Schule Vorbereiten Wechselsprechanlage", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-05-29", "baustelle": "Brotterode Grundschule BMA, ELA, SD Karte Norlicht", "beginn": "07:00", "p1": 20, "p2": "", "ende": "12:40", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": 35}, {"datum": "2026-05-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-05-31", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}], "Juni": [{"datum": "2026-06-01", "baustelle": "Bibra Gemeinschaftsschule BMA, ELA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-02", "baustelle": "Hammelburg Pflegeheim BMA, Notlicht", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": 10.0, "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": 91}, {"datum": "2026-06-03", "baustelle": "MGN Anne Frank BMA; MGN Kita Max und Moritz BMA, Feststellanlage", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-04", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-05", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-06", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-08", "baustelle": "Apfelst\u00e4dt AWO Tausch Akkus Notlicht, Oldisleben AWO BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "18:00", "fahrzeit": 1.5, "verpfleg": 12.0, "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": 141}, {"datum": "2026-06-09", "baustelle": "MGN Henfling Gymnasium BMA, ELA; MGN Anne Frank Schule Gegensprechanlage", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-10", "baustelle": "MGN Kiliansbergschule BMA, Feststell; MGN Gelbe Gefahr", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-11", "baustelle": "MGN Ausweichschule BMA, EMA; Breitungen Schule St\u00f6rung EMA; Schmalkalden Grundschule BMA, EMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": 4.0, "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": 27}, {"datum": "2026-06-12", "baustelle": "Waltershausen AWO BMA", "beginn": "07:00", "p1": 20, "p2": "", "ende": "12:40", "fahrzeit": "", "verpfleg": 6.0, "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": 55}, {"datum": "2026-06-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-15", "baustelle": "MGN Villa Strupp Feststell, Bewegungsmelder Beleuchtung, BMA", "beginn": "07:30", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-16", "baustelle": "MGN Villa Strupp Umbau Notlicht; MGN Polizeischule Kabel geflickt", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "17:00", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-17", "baustelle": "MGN Utendorfer Stra\u00dfe Aufnahme Umbau RWA; MGN LRA Haus 4 BMA; Kaltenwestheim Mehrzweckhalle BMA; MGN Lebenshilfe Barbarastra\u00dfe St\u00f6rung BMA", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "17:00", "fahrzeit": "", "verpfleg": 4.0, "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": 27}, {"datum": "2026-06-18", "baustelle": "MGN Villa Strupp Umbau Notlicht", "beginn": "07:00", "p1": 20, "p2": "", "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-19", "baustelle": "MGN Villa Strupp Umbau Notlicht, MGN WBG St\u00f6rung RWA", "beginn": "07:00", "p1": 20, "p2": "", "ende": "12:40", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-20", "baustelle": "Bauerbach Schillermuseum St\u00f6rung BMA", "beginn": "13:15", "p1": "", "p2": "", "ende": "15:45", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-21", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": 10, "fahrtkm": ""}, {"datum": "2026-06-22", "baustelle": "MGN Villa Strupp Umbau Notlicht; Schmalkalden Gymnasium St\u00f6rung EMA; Wernshausen Sporthalle aufnahme T\u00fcv M\u00e4ngel", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:30", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": "", "fahrtkm": ""}, {"datum": "2026-06-23", "baustelle": "Schweinfurt Pflegeheim BMA, Flucht\u00fcr, Lampen tauschen", "beginn": "06:00", "p1": 20, "p2": 30, "ende": "17:30", "fahrzeit": 1.5, "verpfleg": 10.0, "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": 87}, {"datum": "2026-06-24", "baustelle": "Breitungen Regelschule St\u00f6rung BMA; Mgn Lebenshilfe BMA, St\u00f6rung BMA, Firma", "beginn": "07:00", "p1": 20, "p2": 30, "ende": "16:00", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "MGN-E 15", "bereit": "", "fahrtkm": ""}, {"datum": "2026-06-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-06-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-06-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-06-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-06-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-06-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "Juli": [{"datum": "2026-07-01", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-03", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-05", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-06", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-10", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-11", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-12", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-13", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-14", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-15", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-16", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-17", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-18", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-19", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-20", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-21", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-22", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-23", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-24", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-25", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-26", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-27", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-28", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-29", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-30", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-07-31", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "August": [{"datum": "2026-08-01", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-02", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-03", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-04", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-05", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-06", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-07", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-08", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-09", "baustelle": "Elternzeit", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-18", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-19", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-20", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-21", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-22", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-23", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-24", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-08-31", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "September": [{"datum": "2026-09-01", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-03", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-05", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-06", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-18", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-19", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-20", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-21", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-22", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-23", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-24", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-09-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "Oktober": [{"datum": "2026-10-01", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-03", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-05", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-06", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-18", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-19", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-20", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-21", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-22", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-23", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-24", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-10-31", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "November": [{"datum": "2026-11-01", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-03", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-05", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-06", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-18", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-19", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-20", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-21", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-22", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-23", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-24", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-25", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-26", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-28", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-29", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-11-30", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}], "Dezember": [{"datum": "2026-12-01", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-02", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-03", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-04", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-05", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-06", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-07", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-08", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-09", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-10", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-11", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-12", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-13", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-14", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-15", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-16", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-17", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-18", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-19", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-20", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-21", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-22", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-23", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-24", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-25", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-26", "baustelle": "Feiertag", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-27", "baustelle": "", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-28", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-29", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-30", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}, {"datum": "2026-12-31", "baustelle": "Urlaub", "beginn": "", "p1": "", "p2": "", "ende": "", "fahrzeit": "", "verpfleg": "", "privatkm": "", "kfz": "", "bereit": "", "fahrtkm": ""}]}, "jahresplan": {"Januar": {"2026-01-01": "F", "2026-01-02": "U", "2026-01-03": "", "2026-01-04": "", "2026-01-05": "B", "2026-01-06": "B", "2026-01-07": "B", "2026-01-08": "B", "2026-01-09": "B", "2026-01-10": "B", "2026-01-11": "B", "2026-01-12": "B", "2026-01-13": "UB", "2026-01-14": "B", "2026-01-15": "B", "2026-01-16": "B", "2026-01-17": "B", "2026-01-18": "B", "2026-01-19": "", "2026-01-20": "", "2026-01-21": "", "2026-01-22": "", "2026-01-23": "", "2026-01-24": "", "2026-01-25": "", "2026-01-26": "", "2026-01-27": "", "2026-01-28": "", "2026-01-29": "", "2026-01-30": "", "2026-01-31": ""}, "Februar": {"2026-02-01": "", "2026-02-02": "", "2026-02-03": "", "2026-02-04": "", "2026-02-05": "U", "2026-02-06": "U", "2026-02-07": "", "2026-02-08": "", "2026-02-09": "U", "2026-02-10": "", "2026-02-11": "E", "2026-02-12": "E", "2026-02-13": "E", "2026-02-14": "E", "2026-02-15": "E", "2026-02-16": "E", "2026-02-17": "E", "2026-02-18": "E", "2026-02-19": "E", "2026-02-20": "E", "2026-02-21": "E", "2026-02-22": "E", "2026-02-23": "E", "2026-02-24": "E", "2026-02-25": "E", "2026-02-26": "E", "2026-02-27": "E", "2026-02-28": "E"}, "März": {"2026-03-01": "E", "2026-03-02": "E", "2026-03-03": "E", "2026-03-04": "E", "2026-03-05": "E", "2026-03-06": "E", "2026-03-07": "E", "2026-03-08": "E", "2026-03-09": "E", "2026-03-10": "E", "2026-03-11": "", "2026-03-12": "", "2026-03-13": "B", "2026-03-14": "B", "2026-03-15": "B", "2026-03-16": "B", "2026-03-17": "B", "2026-03-18": "B", "2026-03-19": "B", "2026-03-20": "B", "2026-03-21": "B", "2026-03-22": "B", "2026-03-23": "B", "2026-03-24": "B", "2026-03-25": "B", "2026-03-26": "B", "2026-03-27": "UB", "2026-03-28": "B", "2026-03-29": "B", "2026-03-30": "", "2026-03-31": ""}, "April": {"2026-04-01": "", "2026-04-02": "", "2026-04-03": "F", "2026-04-04": "", "2026-04-05": "F", "2026-04-06": "F", "2026-04-07": "S", "2026-04-08": "S", "2026-04-09": "S", "2026-04-10": "B", "2026-04-11": "B", "2026-04-12": "B", "2026-04-13": "B", "2026-04-14": "UB", "2026-04-15": "B", "2026-04-16": "B", "2026-04-17": "B", "2026-04-18": "B", "2026-04-19": "B", "2026-04-20": "B", "2026-04-21": "K", "2026-04-22": "K", "2026-04-23": "K", "2026-04-24": "K", "2026-04-25": "", "2026-04-26": "", "2026-04-27": "", "2026-04-28": "", "2026-04-29": "", "2026-04-30": ""}, "Mai": {"2026-05-01": "F", "2026-05-02": "", "2026-05-03": "", "2026-05-04": "", "2026-05-05": "", "2026-05-06": "", "2026-05-07": "", "2026-05-08": "", "2026-05-09": "", "2026-05-10": "", "2026-05-11": "", "2026-05-12": "", "2026-05-13": "", "2026-05-14": "F", "2026-05-15": "U", "2026-05-16": "", "2026-05-17": "", "2026-05-18": "", "2026-05-19": "", "2026-05-20": "", "2026-05-21": "", "2026-05-22": "B", "2026-05-23": "B", "2026-05-24": "B", "2026-05-25": "FB", "2026-05-26": "B", "2026-05-27": "B", "2026-05-28": "B", "2026-05-29": "B", "2026-05-30": "B", "2026-05-31": "B"}, "Juni": {"2026-06-01": "B", "2026-06-02": "B", "2026-06-03": "B", "2026-06-04": "UB", "2026-06-05": "UB", "2026-06-06": "B", "2026-06-07": "B", "2026-06-08": "B", "2026-06-09": "B", "2026-06-10": "B", "2026-06-11": "B", "2026-06-12": "B", "2026-06-13": "B", "2026-06-14": "B", "2026-06-15": "B", "2026-06-16": "B", "2026-06-17": "B", "2026-06-18": "B", "2026-06-19": "B", "2026-06-20": "B", "2026-06-21": "B", "2026-06-22": "", "2026-06-23": "", "2026-06-24": "", "2026-06-25": "", "2026-06-26": "", "2026-06-27": "", "2026-06-28": "", "2026-06-29": "", "2026-06-30": ""}, "Juli": {"2026-07-01": "", "2026-07-02": "", "2026-07-03": "", "2026-07-04": "", "2026-07-05": "", "2026-07-06": "S", "2026-07-07": "S", "2026-07-08": "S", "2026-07-09": "S", "2026-07-10": "E", "2026-07-11": "E", "2026-07-12": "E", "2026-07-13": "E", "2026-07-14": "E", "2026-07-15": "E", "2026-07-16": "E", "2026-07-17": "E", "2026-07-18": "E", "2026-07-19": "E", "2026-07-20": "E", "2026-07-21": "E", "2026-07-22": "E", "2026-07-23": "E", "2026-07-24": "E", "2026-07-25": "E", "2026-07-26": "E", "2026-07-27": "E", "2026-07-28": "E", "2026-07-29": "E", "2026-07-30": "E", "2026-07-31": "E"}, "August": {"2026-08-01": "E", "2026-08-02": "E", "2026-08-03": "E", "2026-08-04": "E", "2026-08-05": "E", "2026-08-06": "E", "2026-08-07": "E", "2026-08-08": "E", "2026-08-09": "E", "2026-08-10": "S", "2026-08-11": "S", "2026-08-12": "S", "2026-08-13": "S", "2026-08-14": "S", "2026-08-15": "", "2026-08-16": "", "2026-08-17": "", "2026-08-18": "", "2026-08-19": "U", "2026-08-20": "U", "2026-08-21": "U", "2026-08-22": "", "2026-08-23": "", "2026-08-24": "", "2026-08-25": "", "2026-08-26": "", "2026-08-27": "", "2026-08-28": "", "2026-08-29": "", "2026-08-30": "", "2026-08-31": ""}, "September": {"2026-09-01": "", "2026-09-02": "", "2026-09-03": "", "2026-09-04": "", "2026-09-05": "", "2026-09-06": "", "2026-09-07": "", "2026-09-08": "", "2026-09-09": "", "2026-09-10": "", "2026-09-11": "", "2026-09-12": "", "2026-09-13": "", "2026-09-14": "", "2026-09-15": "", "2026-09-16": "", "2026-09-17": "", "2026-09-18": "", "2026-09-19": "", "2026-09-20": "F", "2026-09-21": "", "2026-09-22": "", "2026-09-23": "", "2026-09-24": "", "2026-09-25": "", "2026-09-26": "", "2026-09-27": "", "2026-09-28": "", "2026-09-29": "", "2026-09-30": ""}, "Oktober": {"2026-10-01": "", "2026-10-02": "", "2026-10-03": "F", "2026-10-04": "", "2026-10-05": "", "2026-10-06": "", "2026-10-07": "", "2026-10-08": "", "2026-10-09": "", "2026-10-10": "", "2026-10-11": "", "2026-10-12": "S", "2026-10-13": "S", "2026-10-14": "S", "2026-10-15": "S", "2026-10-16": "S", "2026-10-17": "", "2026-10-18": "", "2026-10-19": "S", "2026-10-20": "S", "2026-10-21": "S", "2026-10-22": "S", "2026-10-23": "S", "2026-10-24": "", "2026-10-25": "", "2026-10-26": "", "2026-10-27": "", "2026-10-28": "", "2026-10-29": "", "2026-10-30": "", "2026-10-31": "F"}, "November": {"2026-11-01": "", "2026-11-02": "", "2026-11-03": "", "2026-11-04": "", "2026-11-05": "", "2026-11-06": "", "2026-11-07": "", "2026-11-08": "", "2026-11-09": "", "2026-11-10": "", "2026-11-11": "", "2026-11-12": "", "2026-11-13": "", "2026-11-14": "", "2026-11-15": "", "2026-11-16": "", "2026-11-17": "", "2026-11-18": "F", "2026-11-19": "", "2026-11-20": "", "2026-11-21": "", "2026-11-22": "", "2026-11-23": "", "2026-11-24": "", "2026-11-25": "", "2026-11-26": "", "2026-11-27": "", "2026-11-28": "", "2026-11-29": "", "2026-11-30": ""}, "Dezember": {"2026-12-01": "", "2026-12-02": "", "2026-12-03": "", "2026-12-04": "", "2026-12-05": "", "2026-12-06": "", "2026-12-07": "", "2026-12-08": "", "2026-12-09": "", "2026-12-10": "", "2026-12-11": "", "2026-12-12": "", "2026-12-13": "", "2026-12-14": "", "2026-12-15": "", "2026-12-16": "", "2026-12-17": "", "2026-12-18": "", "2026-12-19": "", "2026-12-20": "", "2026-12-21": "U", "2026-12-22": "U", "2026-12-23": "U", "2026-12-24": "U", "2026-12-25": "F", "2026-12-26": "F", "2026-12-27": "", "2026-12-28": "U", "2026-12-29": "U", "2026-12-30": "U", "2026-12-31": "U"}}, "jahresurlaub": 25, "resturlaub": 4};
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const TAG_NAMES = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const SOLL_NORMAL = 8.67;
+const SOLL_FREITAG = 5.33;
+
+let state = {
+  data: null,  // loaded from GitHub or seed
+  currentMonth: new Date().getMonth(), // 0-based
+  dirty: false,
+  github: { token: '', repo: '' }
+};
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+async function init() {
+  // Load GitHub settings
+  state.github.token = localStorage.getItem('sz_token') || '';
+  state.github.repo = localStorage.getItem('sz_repo') || '';
+
+  if (state.github.token && state.github.repo) {
+    try {
+      await loadFromGitHub();
+    } catch(e) {
+      console.warn('GitHub load failed, using seed:', e);
+      state.data = JSON.parse(JSON.stringify(SEED_DATA));
+      showToast('Offline – Seed-Daten geladen');
+    }
+  } else {
+    state.data = JSON.parse(JSON.stringify(SEED_DATA));
+  }
+
+  // Hide loading
+  setTimeout(() => {
+    document.getElementById('loading').style.display = 'none';
+    if (!state.github.token) {
+      document.getElementById('setup-overlay').classList.add('open');
+    }
+  }, 600);
+
+  renderMonthView();
+  renderJahresplan();
+  renderUeberstunden();
+}
+
+// ═══════════════════════════════════════════════
+// GITHUB
+// ═══════════════════════════════════════════════
+async function loadFromGitHub() {
+  const url = `https://api.github.com/repos/${state.github.repo}/contents/stundenzettel_2026.json`;
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${state.github.token}`, 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (!res.ok) throw new Error(`GitHub ${res.status}`);
+  const j = await res.json();
+  const content = atob(j.content.replace(/\n/g,''));
+  state.data = JSON.parse(content);
+  state.githubSha = j.sha;
+  setSyncDot('ok');
+}
+
+async function saveToGitHub() {
+  if (!state.github.token || !state.github.repo) {
+    document.getElementById('setup-overlay').classList.add('open');
+    return;
+  }
+  setSyncDot('pending');
+  try {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(state.data, null, 2))));
+    const url = `https://api.github.com/repos/${state.github.repo}/contents/stundenzettel_2026.json`;
+    const body = {
+      message: `Stundenzettel Update ${new Date().toLocaleDateString('de-DE')}`,
+      content,
+      ...(state.githubSha ? { sha: state.githubSha } : {})
+    };
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${state.github.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const j = await res.json();
+    state.githubSha = j.content.sha;
+    state.dirty = false;
+    document.getElementById('btn-save').style.display = 'none';
+    setSyncDot('ok');
+    showToast('✓ Gespeichert');
+  } catch(e) {
+    setSyncDot('error');
+    showToast('❌ Fehler: ' + e.message);
+  }
+}
+
+function setSyncDot(status) {
+  const dot = document.getElementById('sync-indicator');
+  dot.className = 'sync-dot' + (status === 'pending' ? ' pending' : status === 'error' ? ' error' : '');
+}
+
+async function saveSetup() {
+  const token = document.getElementById('inp-token').value.trim();
+  const repo = document.getElementById('inp-repo').value.trim();
+  if (!token || !repo) return;
+  document.getElementById('setup-error').textContent = '';
+  state.github.token = token;
+  state.github.repo = repo;
+  try {
+    await loadFromGitHub();
+    localStorage.setItem('sz_token', token);
+    localStorage.setItem('sz_repo', repo);
+    document.getElementById('setup-overlay').classList.remove('open');
+    renderMonthView();
+    renderJahresplan();
+    renderUeberstunden();
+    showToast('✓ Verbunden mit GitHub');
+  } catch(e) {
+    // Try to create file
+    try {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(state.data, null, 2))));
+      const url = `https://api.github.com/repos/${repo}/contents/stundenzettel_2026.json`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Stundenzettel initialisiert', content })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const j = await res.json();
+      state.githubSha = j.content.sha;
+      localStorage.setItem('sz_token', token);
+      localStorage.setItem('sz_repo', repo);
+      document.getElementById('setup-overlay').classList.remove('open');
+      showToast('✓ Datei erstellt und verbunden');
+    } catch(e2) {
+      document.getElementById('setup-error').textContent = 'Fehler: ' + e2.message;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// CALCULATIONS
+// ═══════════════════════════════════════════════
+function calcStunden(row) {
+  if (!row.beginn || !row.ende) return null;
+  const spList = ['Urlaub','Feiertag','Krank','Elternzeit','Arbeitszeitausgleich'];
+  if (spList.includes(row.baustelle)) return null;
+  const [bh, bm] = row.beginn.split(':').map(Number);
+  const [eh, em] = row.ende.split(':').map(Number);
+  const rawH = (eh * 60 + em - bh * 60 - bm) / 60;
+  const p1 = (row.p1 === '' || row.p1 === null) ? 0 : +row.p1;
+  const p2 = (row.p2 === '' || row.p2 === null) ? 0 : +row.p2;
+  const fz = (row.fahrzeit === '' || row.fahrzeit === null) ? 0 : +row.fahrzeit;
+  const std = Math.max(0, rawH - p1/60 - p2/60 - fz);
+  return Math.round(std * 100) / 100;
+}
+
+function getSoll(datum) {
+  const d = new Date(datum);
+  const dow = d.getDay(); // 0=So,1=Mo,...,5=Fr,6=Sa
+  return dow === 5 ? SOLL_FREITAG : 8.67;
+}
+
+function getStdDisplay(row) {
+  const spList = ['Urlaub','Feiertag','Krank','Elternzeit','Arbeitszeitausgleich'];
+  if (spList.includes(row.baustelle)) {
+    const d = new Date(row.datum);
+    const dow = d.getDay();
+    if (dow === 0 || dow === 6) return null;
+    return dow === 5 ? SOLL_FREITAG : SOLL_NORMAL;
+  }
+  return calcStunden(row);
+}
+
+function calcVerpfleg(fahrtkm) {
+  if (!fahrtkm || fahrtkm === '') return 0;
+  const km = +fahrtkm;
+  if (km < 20) return 0;
+  if (km <= 35) return 4;
+  if (km <= 65) return 6;
+  if (km <= 80) return 8;
+  if (km <= 120) return 10;
+  return 12;
+}
+
+function getMonthTotals(monthName) {
+  const rows = state.data.months[monthName] || [];
+  let totalStd = 0, mehr = 0, minus = 0, fahrzeit = 0, verpfleg = 0, bereit = 0;
+  for (const r of rows) {
+    if (r.datum === 'GESAMT') continue;
+    const std = getStdDisplay(r);
+    if (std !== null) {
+      totalStd += std;
+      const soll = getSoll(r.datum);
+      const diff = Math.round((std - soll) * 100) / 100;
+      if (diff > 0) mehr += diff;
+      else if (diff < 0) minus += Math.abs(diff);
+    }
+    fahrzeit += +(r.fahrzeit || 0);
+    // auto-calc verpflegung from fahrtkm if not set manually
+    const vp = r.verpfleg !== '' && r.verpfleg !== null ? +r.verpfleg : calcVerpfleg(r.fahrtkm);
+    verpfleg += vp;
+    bereit += +(r.bereit || 0);
+  }
+  return { totalStd: Math.round(totalStd*100)/100, mehr: Math.round(mehr*100)/100, minus: Math.round(minus*100)/100, fahrzeit: Math.round(fahrzeit*100)/100, verpfleg: Math.round(verpfleg*100)/100, bereit };
+}
+
+// ═══════════════════════════════════════════════
+// RENDER MONTH
+// ═══════════════════════════════════════════════
+function renderMonthView() {
+  const mName = MONTHS[state.currentMonth];
+  document.getElementById('month-title').textContent = mName + ' 2026';
+  const rows = state.data.months[mName] || [];
+  const totals = getMonthTotals(mName);
+
+  // Summary
+  const sc = document.getElementById('summary-card');
+  sc.innerHTML = `
+    <div class="item"><div class="val">${totals.totalStd}</div><div class="lbl">Std. gesamt</div></div>
+    <div class="item highlight"><div class="val">${totals.mehr || '–'}</div><div class="lbl">Mehrstd.</div></div>
+    <div class="item"><div class="val">${totals.minus || '–'}</div><div class="lbl">Minusstd.</div></div>
+    <div class="item"><div class="val">${totals.verpfleg > 0 ? totals.verpfleg + ' €' : '–'}</div><div class="lbl">Verpfleg.</div></div>
+    <div class="item"><div class="val">${totals.bereit || '–'}</div><div class="lbl">Bereitsch.</div></div>
+  `;
+
+  const today = new Date().toISOString().split('T')[0];
+  const list = document.getElementById('day-list');
+  list.innerHTML = '';
+
+  rows.forEach((row, idx) => {
+    if (row.datum === 'GESAMT') return;
+    const d = new Date(row.datum);
+    const dow = d.getDay(); // 0=So
+    const tagName = TAG_NAMES[dow];
+    const isWE = dow === 0 || dow === 6;
+    const isToday = row.datum === today;
+
+    const std = getStdDisplay(row);
+    const soll = getSoll(row.datum);
+    const diff = std !== null ? Math.round((std - soll) * 100) / 100 : null;
+
+    let stdClass = '';
+    if (diff !== null) { if (diff > 0) stdClass = 'mehr'; else if (diff < 0) stdClass = 'minus'; }
+
+    let stdText = '';
+    if (std !== null) stdText = std + ' Std.';
+    else if (row.baustelle) stdText = '';
+
+    // Badge
+    const sp = ['Urlaub','Feiertag','Krank','Elternzeit','Arbeitszeitausgleich'];
+    let badge = '';
+    if (sp.includes(row.baustelle)) {
+      const codes = {Urlaub:'U',Feiertag:'F',Krank:'K',Elternzeit:'E',Arbeitszeitausgleich:'A'};
+      const c = codes[row.baustelle];
+      badge = `<span class="badge badge-${c}">${row.baustelle}</span>`;
+    }
+
+    const div = document.createElement('div');
+    div.className = `day-row${isWE ? ' weekend' : ''}${isToday ? ' today' : ''}`;
+    div.dataset.idx = idx;
+
+    div.innerHTML = `
+      <div class="day-header" onclick="toggleDay(${idx})">
+        <div class="day-tag">${tagName}<br><span style="font-size:10px;font-weight:400;color:var(--text3)">${d.getDate()}</span></div>
+        <div style="min-width:0">
+          ${badge || `<div class="day-baustelle">${row.baustelle || ''}</div>`}
+          ${row.beginn ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">${row.beginn}–${row.ende}${row.p1 ? ` · P1: ${row.p1}'` : ''}${row.p2 ? ` P2: ${row.p2}'` : ''}</div>` : ''}
+        </div>
+        <div class="day-std ${stdClass}">${stdText}</div>
+      </div>
+      <div class="day-edit" id="edit-${idx}">
+        <div class="edit-row">
+          <div class="field-group" style="grid-column:1/-1">
+            <label>Baustelle / Arbeiten</label>
+            <textarea id="f-${idx}-baustelle" onchange="fieldChange(${idx},'baustelle',this.value)">${escHtml(row.baustelle)}</textarea>
+          </div>
+        </div>
+        <div class="edit-row cols4">
+          <div class="field-group"><label>Beginn</label><input type="time" id="f-${idx}-beginn" value="${row.beginn}" onchange="fieldChange(${idx},'beginn',this.value)"></div>
+          <div class="field-group"><label>P1 (min)</label><input type="number" min="0" max="120" id="f-${idx}-p1" value="${row.p1}" onchange="fieldChange(${idx},'p1',this.value)"></div>
+          <div class="field-group"><label>P2 (min)</label><input type="number" min="0" max="120" id="f-${idx}-p2" value="${row.p2}" onchange="fieldChange(${idx},'p2',this.value)"></div>
+          <div class="field-group"><label>Ende</label><input type="time" id="f-${idx}-ende" value="${row.ende}" onchange="fieldChange(${idx},'ende',this.value)"></div>
+        </div>
+        <div class="edit-row cols3">
+          <div class="field-group"><label>Fahrzeit (h)</label><input type="number" step="0.25" min="0" id="f-${idx}-fahrzeit" value="${row.fahrzeit}" onchange="fieldChange(${idx},'fahrzeit',this.value)"></div>
+          <div class="field-group"><label>Fahrt-km (Verpfl.)</label><input type="number" min="0" id="f-${idx}-fahrtkm" value="${row.fahrtkm}" onchange="fieldChange(${idx},'fahrtkm',this.value)"></div>
+          <div class="field-group"><label>Privat km</label><input type="text" id="f-${idx}-privatkm" value="${row.privatkm}" onchange="fieldChange(${idx},'privatkm',this.value)"></div>
+        </div>
+        <div class="edit-row cols2">
+          <div class="field-group"><label>KFZ-Kennzeichen</label><input type="text" id="f-${idx}-kfz" value="${row.kfz}" onchange="fieldChange(${idx},'kfz',this.value)"></div>
+          <div class="field-group"><label>Bereitschaft</label><input type="number" min="0" id="f-${idx}-bereit" value="${row.bereit}" onchange="fieldChange(${idx},'bereit',this.value)"></div>
+        </div>
+        <div class="calc-display" id="calc-${idx}"></div>
+      </div>
+    `;
+    list.appendChild(div);
+    updateCalcDisplay(idx, row);
+  });
+}
+
+function updateCalcDisplay(idx, row) {
+  const el = document.getElementById(`calc-${idx}`);
+  if (!el) return;
+  const std = calcStunden(row);
+  const soll = getSoll(row.datum);
+  const diff = std !== null ? Math.round((std - soll) * 100) / 100 : null;
+  const vp = row.verpfleg !== '' && row.verpfleg !== null ? +row.verpfleg : calcVerpfleg(row.fahrtkm);
+  el.innerHTML = `
+    <div><div class="cv">${std !== null ? std : '–'}</div><div class="cl">Std. ges.</div></div>
+    <div><div class="cv" style="color:${diff > 0 ? 'var(--success)' : diff < 0 ? 'var(--danger)' : 'var(--primary)'}">${diff !== null ? (diff >= 0 ? '+' : '') + diff : '–'}</div><div class="cl">Mehr/Minus</div></div>
+    <div><div class="cv">${vp > 0 ? vp + ' €' : '–'}</div><div class="cl">Verpfleg.</div></div>
+  `;
+}
+
+function toggleDay(idx) {
+  const el = document.getElementById(`edit-${idx}`);
+  if (el.classList.contains('open')) {
+    el.classList.remove('open');
+  } else {
+    document.querySelectorAll('.day-edit.open').forEach(e => e.classList.remove('open'));
+    el.classList.add('open');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function fieldChange(idx, field, value) {
+  const mName = MONTHS[state.currentMonth];
+  const rows = state.data.months[mName];
+  rows[idx][field] = value === '' ? '' : (field === 'baustelle' || field === 'kfz' || field === 'privatkm') ? value : (isNaN(+value) ? value : +value || '');
+  markDirty();
+  // Re-render the header of this row
+  updateCalcDisplay(idx, rows[idx]);
+  // Refresh summary
+  const totals = getMonthTotals(mName);
+  const sc = document.getElementById('summary-card');
+  sc.innerHTML = `
+    <div class="item"><div class="val">${totals.totalStd}</div><div class="lbl">Std. gesamt</div></div>
+    <div class="item highlight"><div class="val">${totals.mehr || '–'}</div><div class="lbl">Mehrstd.</div></div>
+    <div class="item"><div class="val">${totals.minus || '–'}</div><div class="lbl">Minusstd.</div></div>
+    <div class="item"><div class="val">${totals.verpfleg > 0 ? totals.verpfleg + ' €' : '–'}</div><div class="lbl">Verpfleg.</div></div>
+    <div class="item"><div class="val">${totals.bereit || '–'}</div><div class="lbl">Bereitsch.</div></div>
+  `;
+}
+
+function markDirty() {
+  state.dirty = true;
+  document.getElementById('btn-save').style.display = 'block';
+  setSyncDot('pending');
+}
+
+// ═══════════════════════════════════════════════
+// MONTH NAVIGATION
+// ═══════════════════════════════════════════════
+function changeMonth(dir) {
+  state.currentMonth = (state.currentMonth + dir + 12) % 12;
+  renderMonthView();
+  document.getElementById('day-list').scrollTop = 0;
+}
+
+function showMonthPicker() {
+  const picked = prompt('Monat (1-12):', state.currentMonth + 1);
+  if (picked && +picked >= 1 && +picked <= 12) {
+    state.currentMonth = +picked - 1;
+    renderMonthView();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// JAHRESPLAN
+// ═══════════════════════════════════════════════
+function renderJahresplan() {
+  const jp = state.data.jahresplan;
+  const today = new Date().toISOString().split('T')[0];
+  const grid = document.getElementById('jp-grid');
+  grid.innerHTML = '';
+
+  const legend = document.getElementById('jp-legend');
+  legend.innerHTML = [
+    ['U','Urlaub','var(--urlaub-bg)','var(--urlaub)'],
+    ['F','Feiertag','var(--feiertag-bg)','var(--feiertag)'],
+    ['K','Krank','var(--krank-bg)','var(--krank)'],
+    ['E','Elternzeit','var(--elternzeit-bg)','var(--elternzeit)'],
+    ['B','Bereitschaft','var(--bereit-bg)','var(--bereit)'],
+    ['S','Schulferien','#e3f0ff','#2557a7'],
+  ].map(([c,l,bg,col]) => `<div class="jp-legend-item"><div class="jp-legend-dot" style="background:${bg};border:1px solid ${col}"></div>${l}</div>`).join('');
+
+  MONTHS.forEach(m => {
+    const monthEl = document.createElement('div');
+    monthEl.className = 'jp-month';
+    const codes = jp[m] || {};
+
+    // Get first day of month
+    const firstDay = new Date(`2026-${String(MONTHS.indexOf(m)+1).padStart(2,'0')}-01`);
+    const startDow = firstDay.getDay(); // 0=So
+    // Map to Mo-So (0=Mo,...,6=So)
+    const offset = startDow === 0 ? 6 : startDow - 1;
+
+    let days = '';
+    // Empty slots before first day
+    for (let i = 0; i < offset; i++) days += `<div class="jp-day"></div>`;
+
+    Object.entries(codes).forEach(([date, code]) => {
+      const d = new Date(date);
+      const dow = d.getDay();
+      const isWE = dow === 0 || dow === 6;
+      const isToday = date === today;
+      const baseCode = code.replace(/[0-9]/g, '').split('')[0] || '';
+      days += `<div class="jp-day${code ? ' jp-'+code : ''}${isWE ? ' wo' : ''}${isToday ? ' today-jp' : ''}" title="${date}: ${code || '–'}">
+        <div class="jp-day-inner">
+          <div class="jp-day-num">${d.getDate()}</div>
+          ${code ? `<div class="jp-day-code">${code}</div>` : ''}
+        </div>
+      </div>`;
+    });
+
+    monthEl.innerHTML = `<div class="jp-month-title">${m}</div><div class="jp-days" style="grid-template-columns:repeat(7,1fr)">${days}</div>`;
+    grid.appendChild(monthEl);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// ÜBERSTUNDEN
+// ═══════════════════════════════════════════════
+function renderUeberstunden() {
+  // Urlaub card
+  const jp = state.data.jahresplan;
+  let urlaubUsed = 0;
+  Object.values(jp).forEach(monthCodes => {
+    Object.values(monthCodes).forEach(code => {
+      if (code && (code === 'U' || code.startsWith('U'))) {
+        const d = new Date(Object.keys(monthCodes)[0] || '2026-01-01');
+        urlaubUsed++;
+      }
+    });
+  });
+  // Count U days properly
+  urlaubUsed = 0;
+  Object.values(jp).forEach(monthCodes => {
+    Object.entries(monthCodes).forEach(([date, code]) => {
+      if (code === 'U' || code === 'UB') {
+        const d = new Date(date);
+        const dow = d.getDay();
+        if (dow !== 0 && dow !== 6) urlaubUsed++;
+      }
+    });
+  });
+  const jahresurlaub = state.data.jahresurlaub || 25;
+  const resturlaub = state.data.resturlaub || 0;
+  const total = jahresurlaub + resturlaub;
+  const rest = total - urlaubUsed;
+
+  document.getElementById('urlaub-card').innerHTML = `
+    <div class="urlaub-item"><div class="val">${total}</div><div class="lbl">Urlaubstage gesamt</div></div>
+    <div class="urlaub-item"><div class="val used">${urlaubUsed}</div><div class="lbl">Genommen</div></div>
+    <div class="urlaub-item"><div class="val rest">${rest}</div><div class="lbl">Verbleibend</div></div>
+  `;
+
+  // Überstunden table
+  const table = document.getElementById('ue-table');
+  const curMonth = state.currentMonth;
+  let rows = `<div class="ue-row header">
+    <div>Monat</div><div class="val">Mehr-Std.</div><div class="val">Minus-Std.</div><div class="val">Netto</div><div class="val">Fahrzeit</div>
+  </div>`;
+  let totMehr = 0, totMinus = 0, totFz = 0;
+  MONTHS.forEach((m, i) => {
+    const t = getMonthTotals(m);
+    totMehr += t.mehr;
+    totMinus += t.minus;
+    totFz += t.fahrzeit;
+    const netto = Math.round((t.mehr - t.minus) * 100) / 100;
+    const isCur = i === curMonth;
+    rows += `<div class="ue-row${isCur ? ' cur' : ''}">
+      <div>${m.substring(0,3)}</div>
+      <div class="val${t.mehr > 0 ? ' pos' : ''}">${t.mehr || '–'}</div>
+      <div class="val${t.minus > 0 ? ' neg' : ''}">${t.minus || '–'}</div>
+      <div class="val${netto > 0 ? ' pos' : netto < 0 ? ' neg' : ''}">${netto !== 0 ? (netto > 0 ? '+' : '') + netto : '–'}</div>
+      <div class="val">${t.fahrzeit || '–'}</div>
+    </div>`;
+  });
+  const nettoGes = Math.round((totMehr - totMinus) * 100) / 100;
+  rows += `<div class="ue-row total">
+    <div>Gesamt</div>
+    <div class="val pos">${Math.round(totMehr*100)/100}</div>
+    <div class="val neg">${Math.round(totMinus*100)/100}</div>
+    <div class="val ${nettoGes >= 0 ? 'pos' : 'neg'}">${(nettoGes >= 0 ? '+' : '') + nettoGes}</div>
+    <div class="val">${Math.round(totFz*100)/100}</div>
+  </div>`;
+  table.innerHTML = rows;
+}
+
+// ═══════════════════════════════════════════════
+// PDF EXPORT
+// ═══════════════════════════════════════════════
+function exportPDF() {
+  const mName = MONTHS[state.currentMonth];
+  const rows = state.data.months[mName] || [];
+  const totals = getMonthTotals(mName);
+  const year = 2026;
+
+  const printWin = window.open('', '_blank');
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Stundenzettel ${mName} ${year}</title>
+<style>
+body { font-family: Arial, sans-serif; font-size: 9pt; margin: 10mm; }
+h1 { font-size: 13pt; margin-bottom: 2px; }
+.meta { font-size: 9pt; color: #444; margin-bottom: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+th { background: #1a3a5c; color: white; padding: 4px 5px; text-align: left; }
+td { padding: 3px 5px; border-bottom: 1px solid #ddd; }
+tr.we { background: #f5f5f5; }
+tr.sp td { background: #fff3e0; }
+.total { font-weight: bold; background: #eef1f6 !important; }
+@page { size: A4; margin: 10mm; }
+</style></head><body>
+<h1>Stundenabrechnung – ${mName} ${year}</h1>
+<div class="meta">Christian Berthold | Pers.-Nr. 00002 | Elektro Krieg Meiningen</div>
+<table>
+<tr><th>Tag</th><th>Datum</th><th>Baustelle/Arbeiten</th><th>Beginn</th><th>P1</th><th>P2</th><th>Ende</th><th>Std.</th><th>Mehr</th><th>Minus</th><th>Fahrz.</th><th>Verpfl.</th><th>KFZ</th><th>Bereit.</th></tr>`;
+
+  const TAG_SHORT = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  rows.forEach(r => {
+    if (r.datum === 'GESAMT') return;
+    const d = new Date(r.datum);
+    const dow = d.getDay();
+    const isWE = dow === 0 || dow === 6;
+    const sp = ['Urlaub','Feiertag','Krank','Elternzeit','Arbeitszeitausgleich'];
+    const isSp = sp.includes(r.baustelle);
+    const std = getStdDisplay(r);
+    const soll = getSoll(r.datum);
+    const diff = std !== null ? Math.round((std - soll)*100)/100 : null;
+    const vp = r.verpfleg !== '' && r.verpfleg !== null ? r.verpfleg : calcVerpfleg(r.fahrtkm);
+    html += `<tr class="${isWE ? 'we' : ''}${isSp ? ' sp' : ''}">
+      <td>${TAG_SHORT[dow]}</td>
+      <td>${d.getDate()}.${d.getMonth()+1}.</td>
+      <td>${escHtml(r.baustelle || '')}</td>
+      <td>${r.beginn || ''}</td><td>${r.p1 || ''}</td><td>${r.p2 || ''}</td><td>${r.ende || ''}</td>
+      <td>${std !== null ? std : ''}</td>
+      <td>${diff > 0 ? diff : ''}</td><td>${diff < 0 ? Math.abs(diff) : ''}</td>
+      <td>${r.fahrzeit || ''}</td><td>${vp || ''}</td><td>${r.kfz || ''}</td><td>${r.bereit || ''}</td>
+    </tr>`;
+  });
+  html += `<tr class="total"><td colspan="7">GESAMT</td>
+    <td>${totals.totalStd}</td><td>${totals.mehr||0}</td><td>${totals.minus||0}</td>
+    <td>${totals.fahrzeit||0}</td><td>${totals.verpfleg||0}</td><td></td><td>${totals.bereit||0}</td>
+  </tr></table>
+<p style="margin-top:12px;font-size:8pt;color:#888">Erstellt: ${new Date().toLocaleString('de-DE')}</p>
+</body></html>`;
+  printWin.document.write(html);
+  printWin.document.close();
+  printWin.onload = () => printWin.print();
+}
+
+// ═══════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════
+function showTab(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'ueberstunden') renderUeberstunden();
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Start
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
